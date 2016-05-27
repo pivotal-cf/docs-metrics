@@ -23,13 +23,26 @@ The Pivotal Cloud Foundry&reg; (PCF) Metrics tile stores metrics data from appli
 <dd><strong>OpenStack support?</strong> Unconfirmed</dd>
 </dl>
 
-## <a id='install'></a>Installing PCF Metrics 
+## <a id='install'></a>Installing PCF Metrics
 
 ### <a id='pre-reqs'></a>Prerequisites
 
-Ensure that you have installed the [Elastic Runtime Tile](http://docs.pivotal.io/pivotalcf/installing/index.html).
+1. Ensure that you have installed the [Elastic Runtime Tile](http://docs.pivotal.io/pivotalcf/installing/index.html).
+1. Ensure that you have installed the [MySQL for Pivotal Cloud Foundry Tile](http://docs.pivotal.io/p-mysql/index.html).
+  * This is required even if you intend to use your own MySQL service for rule storage
 
-### <a id='step1'></a> Step 1: Add the PCF Metrics Tile to Ops Manager
+### <a id='step1'></a> Step 1: Set up the Notification Service
+
+1. From the **Installation Dashboard**, select the **Elastic Runtime** tile.
+1. Click **Email Notifications**.
+1. Enter the email that will be used to send notifications and the SMTP Server configuration.
+1. Click **Save**
+1. Click **Errands**.
+1. Select **Notifications** under Post-Deploy Errands.
+1. Click **Save**
+1. From the Installation Dashboard, click **Apply Changes** to install the notification service.
+
+### <a id='step2'></a> Step 2: Add the PCF Metrics Tile to Ops Manager
 
 1. Download the PCF Metrics file from
    [Pivotal Network](https://network.pivotal.io/products/pcf-metrics).
@@ -37,7 +50,7 @@ Ensure that you have installed the [Elastic Runtime Tile](http://docs.pivotal.io
 1. Click **Add** next to the uploaded product description in the **Available Products**
    view to add PCF Metrics to your **Installation Dashboard**.
 
-### <a id='step2'></a>Step 2: Configure the PCF Metrics Tile
+### <a id='step3'></a>Step 3: Configure the PCF Metrics Tile
 
 From the **Installation Dashboard**, click the **PCF Metrics** tile.
 
@@ -46,10 +59,10 @@ From the **Installation Dashboard**, click the **PCF Metrics** tile.
 #### Assign Availability Zones (AZs) and Networks.
 
 1. Click **Assign AZs and Networks**.
-1. Select an Availability Zone under **Place singleton jobs**. 
+1. Select an Availability Zone under **Place singleton jobs**.
    <br>
    Ops Manager runs Metrics jobs with a single instance in this Availability Zone.
-1. Select one or more Availability Zones under **Balance other jobs**. 
+1. Select one or more Availability Zones under **Balance other jobs**.
    <br>
    Ops Manager balances instances of Metrics jobs with more than one instance
    across the Availability Zones that you specify.
@@ -60,25 +73,38 @@ From the **Installation Dashboard**, click the **PCF Metrics** tile.
 
 1. Click **Push Ingestor**.
 1. Review the instance count. By default, the tile will deploy one instance of the ingestor. If you expect a high level of inbound log traffic, you may need to increase the instance count.
-1. Click **Save**. 
+1. Click **Save**.
+
+#### Alerting System Options
+1. Click **Alerting System Options**
+1. Review the Enable debug endpoint option
 
 #### Database Options
 
-1. Click **Database Connections**.
+1. Click **Rules Database**.
+1. Configure the MySQL database source using one of the methods below
 1. Review the Max Idle Connection count and the Max Open Connections.
-1. Click **Save**. 
+1. Click **Save**.
+
+###### Configure PCF Metrics to use Pivotal MySQL for Cloud Foundry Tile
+1. Select **MySQL tile**
+1. Enter a MySQL service plan name provided by the Pivotal MySQL for Cloud Foundry Tile
+
+###### Configure PCF Metrics to use a custom MySQL database
+1. Select **External MySQL**
+1. Enter the url for the database in the format `mysql://username:password@hostname:port/db_schema`
 
 #### Errands
 
 1. Click **Errands**.
 1. Review Post-Deploy Errands. Each errand in this list deploys a different component of the alerting and metrics system. If you choose not to run all errands, the system will not behave as expected.
-1. Review Pre-Delete Errands. Should you choose to uninstall the tile, the cleanup errand removes artifacts created by the tile.
+1. Review Pre-Delete Errands. If the cleanup errand is not selected, artifacts created by the tile may not be removed when the tile is uninstalled.
 
 #### Resource Config
 
 1. Click **Resource Config**.
 1. Review the resource configurations. By default, the settings match the instance types that are best suited for each job. If you expect a high level of use, you may need to increase the disk resources available to your instances.
-1. Click **Save**. 
+1. Click **Save**.
 
 #### Stemcell
 
@@ -87,6 +113,6 @@ From the **Installation Dashboard**, click the **PCF Metrics** tile.
    <p class='note'><strong>Note:</strong> On AWS make sure to use a HVM stemcell if you are using the default instance sizes.</p>
 1. Click **Import Stemcell** and select the stemcell file you downloaded.
 
-### <a id='step3'></a>Step 3: Deploy PCF Metrics
+### <a id='step4'></a>Step 4: Deploy PCF Metrics
 
 Click **Apply Changes** to install the service. Review the [Using PCF Metrics](using.html) topic for more information on how to log in, use, and interpret data from PCF Metrics.
