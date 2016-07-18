@@ -1,7 +1,7 @@
 ---
 breadcrumb: PCF Metrics Documentation
 title: Installing PCF Metrics
-owner: PCF Metrics
+owner: PCF Metrics  
 ---
 
 The Pivotal Cloud Foundry&reg; (PCF) Metrics tile stores metrics data from applications running on PCF and graphically presents that data for operators and developers. PCF Metrics helps operators and developers better understand the health and performance of their apps by providing a near real-time view of the following data:
@@ -28,6 +28,8 @@ The Pivotal Cloud Foundry&reg; (PCF) Metrics tile stores metrics data from appli
 ### <a id='pre-reqs'></a>Prerequisites
 
 Ensure that you have installed the [Elastic Runtime Tile](http://docs.pivotal.io/pivotalcf/installing/index.html).
+
+<p class="note"><strong>NOTE</strong>: The default `System Logging -> Loggregator Port` in Elastic Runtime is 443. In an AWS environment, the port must be changed to 4443.</p> 
 
 ### <a id='step1'></a> Step 1: Add the PCF Metrics Tile to Ops Manager
 
