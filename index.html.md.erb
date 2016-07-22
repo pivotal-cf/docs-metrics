@@ -23,7 +23,7 @@ The Pivotal Cloud Foundry&reg; (PCF) Metrics tile stores metrics data from appli
 <dd><strong>OpenStack support?</strong> Unconfirmed</dd>
 </dl>
 
-## <a id='install'></a>Installing PCF Metrics 
+## <a id='install'></a>Installing PCF Metrics
 
 ### <a id='pre-reqs'></a>Prerequisites
 
@@ -46,21 +46,43 @@ From the **Installation Dashboard**, click the **PCF Metrics** tile.
 #### Assign Availability Zones (AZs) and Networks.
 
 1. Click **Assign AZs and Networks**.
-1. Select an Availability Zone under **Place singleton jobs**. 
+1. Select an Availability Zone under **Place singleton jobs**.
    <br>
    Ops Manager runs Metrics jobs with a single instance in this Availability Zone.
-1. Select one or more Availability Zones under **Balance other jobs**. 
+1. Select one or more Availability Zones under **Balance other jobs**.
    <br>
    Ops Manager balances instances of Metrics jobs with more than one instance
    across the Availability Zones that you specify.
 1. Use the drop-down menu to select a network.
 1. Click **Save**.
 
+#### Application Security Groups.
+
+To allow this service to have network access the errand that pushes the Metrics Proxy creates an
+Application Security Groups (ASGs).
+<p class="note"><strong>Note</strong>: Without Application Security Groups the service will not be usable.</p>
+<a id="service-container-network-connections"></a> Service Container Network Connections
+This service is deployed as an application to the iaas-brokers space in the
+system org, and requires the following outbound network connections:<br>
+
+|Destination        |Ports       |Protocol   |Reason
+|---                |---         |---        |---
+|IMDS IPs           |8888        |tcp        |The Proxy fetches data from the IMDS assigned to this service.
+
+<br>
+The errand creates a security group linked to the system org and metrics space. The security group rule is listed as follows:
+[
+    {
+        "destination": "0.0.0.0-255.255.255.255",
+        "protocol": "all"
+    }
+]
+
 #### Resource Config
 
 1. Click **Resource Config**.
 1. Review the resource configurations. By default, the settings match the instance types that are best suited for each job. If you expect a high level of use, you may need to increase the disk resources available to your instances.
-1. Click **Save**. 
+1. Click **Save**.
 
 #### Stemcell
 
