@@ -56,6 +56,28 @@ From the **Installation Dashboard**, click the **PCF Metrics** tile.
 1. Use the drop-down menu to select a network.
 1. Click **Save**.
 
+#### Application Security Groups.
+
+To allow this service to have network access the errand that pushes the Metrics Proxy creates an
+Application Security Groups (ASGs).
+<p class="note"><strong>Note</strong>: Without Application Security Groups the service will not be usable.</p>
+<a id="service-container-network-connections"></a> Service Container Network Connections
+This service is deployed as an application to the iaas-brokers space in the
+system org, and requires the following outbound network connections:<br>
+
+|Destination        |Ports       |Protocol   |Reason
+|---                |---         |---        |---
+|IMDS IPs           |8888        |tcp        |The Proxy fetches data from the IMDS assigned to this service.
+
+<br>
+The errand creates a security group linked to the system org and metrics space. The security group rule is listed as follows:
+[
+    {
+        "destination": "0.0.0.0-255.255.255.255",
+        "protocol": "all"
+    }
+]
+
 #### Resource Config
 
 1. Click **Resource Config**.
