@@ -15,29 +15,53 @@ owner: PCF Metrics
      }
 </style>
 
-This topic describes how to configure Pivotal Cloud Foundry (PCF) Metrics for high availability. Operators can use these procedures to optimize PCF Metrics for high capacity.
+This topic describes how to configure Pivotal Cloud Foundry (PCF) Metrics for your PCF deployment. Operators can use these procedures to optimize PCF Metrics for high capacity, or reduce resource usage for smaller deployment sizes.
 
 For more information about PCF Metrics components, see [PCF Metrics Product Architecture](./architecture.html).
 
+##<a id='suggested-sizing'></a> Suggested Sizing Configurations by Deployment Size
+
+Use the following table as a reference for default sizing configurations depending on the size of your PCF Deployment (and the number of apps you have deployed).
+
+<p class="note"><strong>Note</strong>: the values in the tables below do not account for additional load on MySQL from custom metrics. We recommend starting with the one of the following configurations and scaling up as necessary by following the steps in (Configuring the Metrics Datastore)[./sizing.html#metrics-datastore]</p>
+
+####Small: Test Use ~100 Apps
+
+| Job                  | Instances            | Persistent Disk Type | VM Sizing                                       |
+|----------------------|----------------------|----------------------|-------------------------------------------------|
+| Elasticsearch Master | 1                    | 10 GB                | small (cpu: 1, ram: 2&nbsp;GB, disk: 8&nbsp;GB) |
+| Elasticsearch Data   | 1                    | 10 GB                | small (cpu: 1, ram: 2&nbsp;GB, disk: 8&nbsp;GB) |
+| Redis                | 1                    | 10 GB                | micro (cpu: 1, ram: 1&nbsp;GB, disk: 8&nbsp;GB) |
+| MySQL Server         | 1 (not configurable) | 10 GB                | small (cpu: 1, ram: 2&nbsp;GB, disk: 8&nbsp;GB) |
+
+####Medium: Production Use ~5000 Apps
+
+| Job                  | Instances            | Persistent Disk Type  | VM Sizing                                             |
+|----------------------|----------------------|-----------------------|-------------------------------------------------------|
+| Elasticsearch Master | 1                    | 10 GB                 | small (cpu: 1, ram: 2&nbsp;GB, disk: 8&nbsp;GB)       |
+| Elasticsearch Data   | 5                    | 200 GB                | small.disk (cpu: 1, ram: 2&nbsp;GB, disk: 16&nbsp;GB) |
+| Redis                | 1                    | 10 GB                 | small.disk (cpu: 1, ram: 2&nbsp;GB, disk: 16&nbsp;GB) |
+| MySQL Server         | 1 (not configurable) | 500 GB                | medium (cpu: 2, ram: 4&nbsp;GB, disk: 8&nbsp;GB)      |
+
+####Large: Production Use ~15000 Apps
+
+| Job                  | Instances             | Persistent Disk Type  | VM Sizing                                        |
+|----------------------|-----------------------|-----------------------|--------------------------------------------------|
+| Elasticsearch Master | 1                     | 10 GB                 | small (cpu: 1, ram: 2&nbsp;GB, disk: 8&nbsp;GB)  |
+| Elasticsearch Data   | 10                    | 500 GB                | large (cpu: 2, ram: 8&nbsp;GB, disk: 16&nbsp;GB) |
+| Redis                | 1                     | 10 GB                 | large (cpu: 2, ram: 8&nbsp;GB, disk: 16&nbsp;GB) |
+| MySQL Server         | 1 (not configurable)  | 2 TB                  | large (cpu: 2, ram: 8&nbsp;GB, disk: 16&nbsp;GB) |
+
 ##<a id='metrics-datastore'></a> Configuring the Metrics Datastore
 
-PCF Metrics stores metrics in a MySQL cluster.
-
-To customize PCF Metrics for high capacity, you can add memory and persistent disk to the MySQL server nodes.
+PCF Metrics stores metrics in a single MySQL node. For PCF deployments with high app logs load, you can add memory and persistent disk to the MySQL server node.
 
 ###<a id='metrics-considerations'></a> Considerations for Scaling
-Because apps emit logs at different volumes and frequencies, you should not scale the MySQL server nodes in accordance to the number of app instances in your deployment. Because of the ease in scaling these components, we recommend starting with a minimal configuration then evaluating performance over a period of time and scaling. As long as persistent disk is being scaled up, there should not be any fear of losing data. 
-
-To calculate approximate starting memory and disk allocation for each MySQL server node, use the following formulas:
-
-* **Memory**: As a general rule, each MySQL server node should have a minimum of 35 GB of memory. Increase from here if read performance starts to decrease.
-* **Persistent Disk**: As a general rule, 10 million metrics stored in MySQL consumes approximately 6.5 GB of persistent disk on the VM.  
-
-Use these results as guidelines. Consider configuring your MySQL server nodes with additional memory and disk if your deployment adds additional app instances.
+While the default configurations outlined above are a good starting point for your MySQL server node, they do not take into account the additional load from custom metrics. Pivotal recommends evaluating performance over a period of time and scaling upwards as necessary. As long as persistent disk is scaled up, you will not lose any data from scaling.
 
 ###<a id='metrics-procedures'></a> Procedures for Scaling
 
-After determining the amount of memory and persistent disk required for each MySQL server node, perform the following steps:
+After determining the amount of memory and persistent disk required for your MySQL server node, perform the following steps:
 
 1. Navigate to the Ops Manager Installation Dashboard and click the **Metrics** tile.
 1. From the **Settings** tab of the **Metrics** tile, click **Resource Config**.
@@ -45,24 +69,15 @@ After determining the amount of memory and persistent disk required for each MyS
 
 	<p class="note warning"><strong>WARNING:</strong> There have been issues with Ops Manager BOSH Director using persistent disks larger than 2TB.</p>
 
-1. If you modify the memory allocation for the MySQL server nodes, you must also update the MySQL InnoDB Buffer Size setting. Pivotal recommends that you set the buffer size to 80% of the memory allocated to that VM. To change the MySQL InnoDB Buffer Size:
-	1. Navigate to the Ops Manager Installation Dashboard and click the <strong>Metrics</strong> tile.
-	2. From the <strong>Settings</strong> tab of the <strong>Metrics</strong> tile, click <strong>Data Store</strong>.
-	3. Update the <strong>MySQL InnoDB Buffer Size</strong> input field.
-
 ##<a id='log-datastore'></a> Configuring the Log Datastore
 
-PCF Metrics uses Elasticsearch to store logs. Each Elasticsearch node contains multiple shards of log data, divided by time slice. To customize PCF Metrics for high capacity, you can scale the number of Elasticsearch data nodes.
+PCF Metrics uses Elasticsearch to store logs. Each Elasticsearch node contains multiple shards of log data, divided by time slice.
 
 ###<a id='log-considerations'></a> Considerations for Scaling
 
-To determine the number of Elasticsearch data nodes required for PCF Metrics, consider how many logs the apps in your deployment emit and the average size of each log.
+The default configurations outlined above are a good starting point for your Elasticsearch Master and Data nodes. For more precision depending on your logs load, feel free to perform the following calculations.
 
-If your average log size is 1 kilobyte, and each node has 1 terabyte of available disk space, then each node has a maximum storage capacity of 1 billion log messages. If your apps emit 3 billion logs over a 24-hour period, you need at least 3 nodes to hold the data and 3 additional nodes for high-availability replication. 
-
-This example assumes that your apps emit logs at a continuous rate over 24 hours. However, apps typically do not emit logs continuously. If your apps emit 2 billion of the 3 billion logs between 8 AM and 4 PM, you must determine the minimum node-to-shard ratio to accommodate that rate over the 8-hour period. Because your apps emit 1 billion logs over a 4 hour span, you need at least 6 nodes (24 hours/6 nodes = 4 hours worth of shards per node) to hold the data and an additional 6 nodes for high-availability replication.   
-
-You can also use the throughput of logs per minute to help determine how many Elasticsearch data nodes to provision. As a general rule, provision one data node for every 5000 logs received in one minute.
+First, you'll need to determine how many logs the apps in your deployment emit and the average size of each log. If your average log size is x, average log rate is r logs/hour, the persistent disk size of a single ES data node is y, and number of ES data nodes is n, then n = r * 336 * x / y. This is assuming the retention period for logs is 2 weeks (and there are 336 hours in 2 weeks), and that x and y have the same units. You can use this formula to scale n and y as you see fit. If you wish to achieve HA for logs, then double the number of ES data nodes.
 
 ###<a id='log-procedures'></a> Procedures for Scaling
 
