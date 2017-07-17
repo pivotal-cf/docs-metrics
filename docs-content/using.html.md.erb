@@ -1,0 +1,143 @@
+---
+breadcrumb: PCF Metrics Documentation
+title: Monitoring and Troubleshooting Apps with PCF Metrics
+owner: PCF Metrics
+list_style_none: true
+---
+
+This topic describes how developers can monitor and troubleshoot their apps using Pivotal Cloud Foundry (PCF) Metrics. 
+
+## <a id="overview"></a> Overview
+
+PCF Metrics helps you understand and troubleshoot the health and performance of your apps by displaying the following:
+
+* [Container Metrics](#container): A graph of CPU, memory, and disk usage percentages 
+* [Network Metrics](#network): A graph of requests, HTTP errors, and response times 
+* [App Events](#events): A graph of update, start, stop, crash, SSH, and staging failure events
+* [Logs](#logs): A list of app logs that you can search, filter, and download
+* [Trace Explorer](#trace): A graph that traces a request as it flows through your apps and their endpoints, along with the corresponding logs
+
+For example, if you see that an app crashed on the **Events** graph, you can zoom in and view the corresponding container metrics, network metrics, and logs. 
+
+
+##<a id='get-started'></a> View an App
+
+In a browser, navigate to `metrics.YOUR-SYSTEM-DOMAIN` and log in with your User Account and Authentication (UAA) credentials. Choose an app for which you want to view metrics or logs. You can view any app that runs in a space that you have access to. 
+
+![Search for an app](search.png)
+
+PCF Metrics displays app data for a given time frame. See the sections below to [Change the Time Frame](#time) for the dashboard, [Interpret Metrics](#metrics) information on each graph, and [Trace App Requests](#trace) with the Trace Explorer.
+
+![Metrics UI](full.png)
+
+## <a id="time"></a>Change the Time Frame
+
+The graphs show time along the horizontal axis. You can change the time frame for all graphs and the logs by using the time selector at the top of the window. Adjust either end of the selector, or click and drag.
+
+![time](images/metrics-time.png)
+
+**Zoom**: From within any graph, click and drag to zoom in on areas of interest. This adjusts all of the graphs, and the logs, to show data from that time frame.
+
+<%= image_tag("metric-zoom.png") %>
+
+**Drag**: From underneath the x-axis of any graph, drag left or right to view data for an earlier or later time. 
+
+
+
+##<a id='metrics'></a> Interpret Metrics
+
+See the following sections to understand how to use each of the views in the dashboard to monitor and troubleshoot your app.
+
+### <a id='container'></a> Container Metrics
+
+The **Container Metrics** graph displays **CPU**, **Memory**, and **Disk** usage:
+
+![Container View](container.png)
+
+* A spike in CPU might point to a process that is computationally heavy. Scaling app instances can relieve the immediate pressure, but investigate the app to better understand and fix the root cause. 
+* A spike in memory might mean a resource leak in the code. Scaling app memory can also relieve the immediate pressure, but look for and resolve the underlying issue so that it does not occur again. 
+* A spike in disk might mean the app is writing logs to files instead of STDOUT, caching data to local disk, or serializing huge sessions to disk. 
+
+### <a id='network'></a> Network Metrics
+
+The **Network Metric** graph displays HTTP **Requests and Errors** and **Response Time**:
+
+![Network View](network.png)
+
+* A spike in response time means your users are waiting longer to use your app. Scaling app instances can spread that workload over more resources and result in faster response times. 
+* A spike in HTTP errors means one or more 5xx errors have occurred. Check your app logs for more information. 
+* A spike in HTTP requests means more users are using your app. Scaling app instances can reduce the higher response time that may result.
+
+### <a id='events'></a> Events 
+
+The **Events** graph shows the following app events:  staging failures (**STG Fail**), **Crash**, **Update**, **Stop**, **Start**, and **SSH**. You can change which events you see using the checkboxes in the upper right. 
+
+![Events](events.png)
+
+<p class="note"><strong>Note</strong>: The <b>SSH</b> event corresponds to someone successfully using SSH to access a container that runs an instance of the app.</p>
+
+See the following topics for more information about app events:
+
+* [About Starting Applications](https://docs.run.pivotal.io/devguide/deploy-apps/app-startup.html)
+* [Troubleshooting Application Deployment and Health](https://docs.run.pivotal.io/devguide/deploy-apps/troubleshoot-app-health.html)  
+
+### <a id="logs"></a>Logs
+
+The **Logs** view displays app log data ingested from the [Loggregator Firehose](https://docs.pivotal.io/pivotalcf/loggregator/architecture.html#firehose), including a histogram that displays log frequency for the current time frame: 
+
+![Logs](logs.png)
+
+The list of logs begins at the time indicated by the placement of the log line in the **Events**, **Container**, and **Network** graphs. To adjust the placement of the log line, hover over the graph and click a new location: 
+
+![Needle](needle.png)
+
+You can interact with the **Logs** view in the following ways:
+
+* **Keyword**: Perform a keyword search. The histogram updates with blue bars based on what you enter. Hover over a histogram bar to view the amount of logs for a specific time based on your filter. 
+* **Highlight**: Enter a term to highlight within your search. The histogram updates with yellow bars based on the results. Hover over a histogram bar to view the amount of logs for a specific time that contain the highlighted term. 
+* **Sources**: Choose which sources to display logs from. For more information, see [Log Types and Their Messages](https://docs.pivotal.io/pivotalcf/devguide/deploy-apps/streaming-logs.html#format).
+* **Order**: Modify the order in which logs appear. 
+* **Download**: Download a file containing logs for the current search. 
+* **Copy**: Click the copy icon to copy the text of the log.
+* **View in Trace Explorer**: Open a window to see the trace of the request associated with the log. See [Trace App Requests](#trace).
+
+## <a id="trace"></a>Trace App Requests
+
+A request to one of your apps initiates a workflow within the app or system of apps. The record of this workflow is a _trace_, which you can use to troubleshoot app failures and latency issues. In the Trace Explorer view, PCF Metrics displays an interactive graph of a trace and its corresponding logs. See the sections below to understand how to use the Trace Explorer.
+
+
+For more information about traces, see [What is a Trace?](http://opentracing.io/documentation/#what-is-a-trace) in the _Open Tracing_ documentation. 
+
+
+
+###<a id="before"></a> Prerequisite
+
+PCF Metrics constructs the Trace Explorer view using trace IDs shared across app logs. Before you [use the Trace Explorer](#trace-explorer), examine the following list to ensure PCF metrics can extract the necessary data from your app logs for your specific app type. 
+
+* **Spring**: Follow the steps below.
+	1. Ensure you are using Spring Boot v1.4.3 or later. 
+	1. Ensure you are using Spring Cloud Sleuth v1.0.12 or later. 
+	1. Add the following to your app dependency file:
+	<pre>dependencies { (2)
+	compile "org.springframework.cloud:spring-cloud-starter-sleuth"
+}</pre>
+* **Node.js**, **Go**, **Python**: Ensure that the servers associated with your app do not modify HTTP requests in a way that removes the `X-B3-TraceId`, `X-B3-SpanId`, and `X-B3-ParentSpan` headers from a request. You do not have to add any dependency to your app.
+* **Ruby**: Ruby servers that use a library depending on Rack modify HTTP request headers in way that is incompatible with PCF Metrics. If you want to trace app requests for your Ruby apps, ensure that your framework does not rely on Rack. You may need to write a raw Ruby server that preserves the `X-B3-TraceId`, `X-B3-SpanId`, and `X-B3-ParentSpan` headers in the request.
+
+###<a id="trace-explorer"></a> Use the Trace Explorer
+
+This section explains how to view the trace for a request received by your app and interact with the Trace Explorer.
+
+1. Select an app in the PCF Metrics dashboard.
+
+1. Click the Trace Explorer icon in a log for which you want to trace the request.
+
+	![Hover over trace icon](click-trace.png)
+	* The Trace Explorer displays the apps and endpoints involved in a completing a request, along with the corresponding logs:
+		![Trace Explorer](trace-explorer.png)
+		A request corresponds to a single trace ID, displayed in the top left. Each row includes an app in the left column and a _span_ in the right column. A span is a particular endpoint within the app and the time it took to execute, in milliseconds. By default, the graph lists each app and endpoint in the order they were called. 
+		<p class="note"><strong>Note</strong>: If you do not have access to the space for an app involved in the request, you cannot see the spans or logs from that app.</p>
+	* You can click a span to show only logs from that span, or any number of spans to toggle which logs appear. Clicking a span also creates a box with that particular span ID in the **Logs** view: 
+		![Click Span](click-span.png)	
+	* If you click `APP APP-NAME` within a log, PCF Metrics returns you to the dashboard view for that app, with the time frame focused on the time of the log that you clicked from. 
+

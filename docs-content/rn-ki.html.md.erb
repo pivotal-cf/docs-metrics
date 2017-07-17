@@ -1,0 +1,87 @@
+---
+title: PCF Metrics Release Notes and Known Issues
+owner: PCF Metrics
+list_style_none: true
+---
+
+This topic contains release notes for Pivotal Cloud Foundry (PCF) Metrics.
+
+## <a id='130'></a>v1.4.0
+
+**Release Date: July 21, 2017**
+
+### <a id="notes"></a>Notes
+
+The following list describes what's new in PCF Metrics v1.4.0:
+
+* **Reduced Log Loss During Upgrades**: PCF Metrics uses a temporary datastore during Elasticsearch downtime,
+  including upgrades, to significantly reduce log loss by continuing to store app logs from the Loggregator Firehose.
+  The temporary datastore is a new Redis component deployed with PCF Metrics that operators must size according to the needs of their system.
+  This includes a new **Redis Queue Limit** field in the **Data Store** pane of the tile **Settings** tab.
+  See [Configuring the Temporary Datastore](./sizing.html#temp-datastore) for more information.
+	<p class="note"><strong>Note</strong>: If you are upgrading from v1.2,
+           <strong>Redis Queue Limit</strong> is a required field even though PCF Metrics will not use the temporary datastore.
+           PCF Metrics only uses the temporary datastore when upgrading from v1.3 or later.</p>
+* **The Trace Explorer**: PCF Metrics provides an interactive graph that allows 
+  you to trace requests as they flow through your apps and their endpoints, along with the corresponding logs.
+  See [Trace App Requests](./using.html#trace) in _Monitoring and Troubleshooting Apps with PCF Metrics_.
+* **Improved UI**: PCF Metrics v1.4.0 includes several UI enhancements such as a new time selector
+  and an improved UX for collapsing and expanding which views you are interested in.
+  To view the UI and understand the new functionality, see [Monitoring and Troubleshooting Apps with PCF Metrics](./using.html).
+* **Events**: The **Events** graph now includes the following events:
+	* **SSH**: This event corresponds to someone successfully using SSH to access a container that runs an instance of the app.
+	* **STG Fail**: This event corresponds to your app failing to stage in PCF.
+
+### <a id="issues"></a>Known Issues
+
+The following sections describe the known issues in PCF Metrics v1.4.0.
+
+#### Compatibility with Elastic Runtime
+
+PCF Metrics v1.4.x requires Elastic Runtime v1.8.9 or later.
+
+#### Metrics and Log Loss when Upgrading from v1.3 to v1.4
+
+The upgrade process from v1.3 to v1.4 acts in the following sequence:
+
+1. Removes the data storage components of v1.3
+1. Deploys v1.4 data storage and ingestion components
+
+The upgrade process does not save any v1.3 data and the new components do not begin ingesting and storing log or metrics data until they successfully deploy.
+
+#### Smoke Test Failure
+
+The PCF Metrics **Smoke Test** errand may fail if your deployment authenticates user sign-ons
+with an external SAML identity provider or an external LDAP server.
+In some cases, these external user stores have an additional login procedure that prevents the errand
+from authenticating with the deployment and validating against the Metrics API.
+
+If you experience this issue, disable the **Smoke Test** errand in the PCF Metrics tile and click **Apply Changes** to run the install again.
+
+For more information about what configurations lead to this failure,
+see [Configure Authentication and Enterprise SSO](http://docs.pivotal.io/pivotalcf/customizing/config-er-vmware.html#er-auth-config) in _Configuring Elastic Runtime_.
+
+#### For Operators Who Deploy PCF Metrics Using BOSH
+
+If both of the following are true, you might experience issues while using PCF Metrics:
+
+* You deploy PCF Metrics using BOSH instead of using the PCF Metrics tile in Ops Manager.
+* You use self-signed certificates.
+
+Pivotal recommends using certificates issued by a Certificate Authority for BOSH deployments of this product.
+
+## <a id="13x"></a>Past Minor v1.3.x
+
+Release Notes for v1.3.x releases can be found [here](http://docs.pivotal.io/pcf-metrics/1-3/rn-ki.html).
+
+## <a id="12x"></a>Past Minor v1.2.x
+
+Release Notes for v1.2.x releases can be found [here](http://docs.pivotal.io/pcf-metrics/1-2/rn-ki.html).
+
+## <a id="11x"></a>Past Minor v1.1.x
+
+Release Notes for v1.1.x releases can be found [here](http://docs.pivotal.io/pcf-metrics/1-1/rn-ki.html).
+
+## <a id="10x"></a>Past Minor v1.0.x
+
+Release Notes for v1.0.x releases can be found [here](http://docs.pivotal.io/pcf-metrics/1-0/rn-ki.html).

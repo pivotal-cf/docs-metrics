@@ -1,0 +1,133 @@
+---
+breadcrumb: PCF Metrics Documentation
+title: PCF Metrics Product Architecture
+owner: PCF Metrics
+list_style_none: true
+---
+
+This topic describes the product architecture of Pivotal Cloud Foundry (PCF) Metrics.
+
+## <a id="overview"></a>Overview
+
+The diagram below displays the components of PCF Metrics in bold, as well as the Cloud Foundry components that the PCF Metrics system interacts with.
+
+PCF Metrics deploys several Cloud Foundry apps as part of the install process. These components are the bold rectangles in the diagram. The cylinders represent the data storage components of PCF Metrics. 
+
+<%= image_tag('architecture.png') %>
+
+See the following sections to understand the several processes that happen within the PCF Metrics system.
+
+##<a id="data-flow"></a> How Data Flows from the Firehose to the Datastores
+
+This section describes how PCF Metrics fills its datastores. PCF Metrics uses three datastores:
+
+* The MySQL component stores metric and event data from the apps running on your PCF deployment. 
+	* Examples of events are `start` and `stop`. 
+	* Examples of metrics are _container metrics_ such as CPU and _network metrics_ such as Requests. 
+* The Elasticsearch component stores logs from the apps running on your PCF deployment.
+* The Redis component is used to cache data ingested from the Firehose as well as data queried by the Metrics API.
+
+### Components
+
+The diagram below highlights the components involved in the process of getting metric and log data into the Elasticsearch and MySQL datastore.
+
+![process one](process1.png)
+
+### Process 
+
+The following table describes how the components act during each stage.
+
+<table>
+	<tr>
+		<th>Stage</th>
+		<th>Description</th>
+	</tr>
+	<tr>
+		<td valign="top">1</td>
+		<td>
+		The <code>metrics-ingestor</code> app receives app logs, container metrics, and network metrics from the Firehose and forwards them to Redis
+		<br><br>
+		Redis does the following:
+			<ul>
+				<li>Acts as a buffer for events and metrics data</li>
+				<li>Acts as a cache</li>
+			</ul>
+		</td>
+	</tr>
+	<tr>
+		<td valign="top">2</td>
+		<td>
+		Each of the logqueues act independently, writing information to the datastores:
+		<br><br>
+		
+		<b>Elasticsearch logqueue</b>
+		<br><br>
+		The <code>elasticsearch-logqueue</code> app reads data from redis and checks whether the Elasticsearch datastore is available, then writes logs to the Elasticsearch datastore if so.
+		<br><br>
+		
+		<b>MySQL logqueue</b>
+		<br><br>
+		The <code>mysql-logqueue</code> app reads data from redis and checks whether the MySQL datastore is available, then does the following:<br><br>
+		<ul>
+			<li>Inserts container metrics and network metrics into MySQL with 1-minute granularity.</li>
+			<li>Parses app log messages for an app event name and inserts the event MySQL</li>
+		</ul>
+	</tr>
+</table>
+
+##<a id="user-flow"></a> How the PCF Metrics UI Retrieves Data from the Datastores
+
+This section describes the flow of data through the system when you interact with the PCF Metrics UI. 
+
+### Components
+
+The diagram below highlights the components involved in this process.
+
+![Process 2](process2.png)
+
+### Process
+
+The following table describes how the components act during each stage.
+
+<table>
+	<tr><th>Stage</th><th>Description</th></tr>
+	<tr><td valign="top">1</td>
+		<td>
+			A user launches <code>metrics.SYSTEM-DOMAIN</code> in a browser and enters their UAA credentials. 
+		</td>
+	</tr>
+	<tr><td valign="top">2</td>
+		<td>		
+			After the UAA authorizes the user, the browser does the following:
+			<br><br>
+			<ol>
+				<li>Retrieves through the Cloud Controller API a list of apps that the user can access</li>
+				<li>Displays a page in which the user can select any app returned by the Cloud Controller API</li>
+			</ol>
+		</td>
+	</tr>
+	<tr><td valign="top">3</td>
+		<td>
+			A user selects an app from the dropdown menu, which does the following:<br></br>
+			<ol>
+				<li>Opens an AJAX connection the metrics API to retrieve metrics and logs for the specified time frame</li>
+			</ol>
+		</td>
+	</tr>
+	<tr>
+		<td valign="top">4</td>
+		<td>
+			The metrics API receives the requests from the browser and does the following:
+			<br><br>
+			<ol>
+				<li>Communicates with the UAA and Cloud Controller to confirm that the user can access data for the requested app</li>
+				<li>Creates jobs on Redis channels that describe the type of metric, log, or event requested, as well as the time period</li>
+				<p class="note"><strong>Note</strong>: PCF Metrics uses Redis as a <a href="http://redis.io/topics/pubsub">pub-sub</a> mechanism between the metrics API and worker apps to marshal metrics and logs.</p>
+			</ol>
+		</td>
+	</tr>
+	<tr>
+		<td valign="top">5</td>
+		<td>The metrics API fetches the data from MYSQL and Elasticsearch, then streams it to the browser.</td>
+	</tr>
+</table>

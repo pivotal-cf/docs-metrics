@@ -1,0 +1,334 @@
+---
+breadcrumb: PCF Metrics Documentation
+title: Sizing PCF Metrics for Your System 
+owner: PCF Metrics
+list_style_none: true
+---
+
+This topic describes how operators configure Pivotal Cloud Foundry (PCF) Metrics depending on their deployment size. 
+Operators can use these procedures to optimize PCF Metrics for high capacity or to reduce resource usage for smaller deployment sizes.
+
+After your deployment has been running for a while, use the information in this topic to scale your running deployment. 
+
+If you are not familiar with the PCF Metrics components, review [PCF Metrics Product Architecture](./architecture.html) before reading this topic.
+
+For how to configure resources for a running deployment, see the procedures below:
+
++ [Procedure for Scaling the Metrics Datastore](#metrics-procedures)
++ [Procedure for Scaling the Log Datastore](##log-procedures)
++ [Procedure for Scaling the Temporary Datastore](#temp-procedures)
++ [Procedure for Scaling the Ingestor, Logqueues, and Metrics API](#ingestor-procedures)
+
+##<a id='configs-by-size'></a> Suggested Sizing by Deployment Size
+
+Use the following tables as a guide for configuring resources for your deployment. 
+
+Estimate the size of your deployment according to how many apps are expected to be deployed.
+
+<table style='nice'>
+   <tr><th>Size</th><th>Purpose</th><th>Approximate number of apps</th></tr>
+   <tr><td><a href="#small">Small</a></td><td>Test use</td><td>100</td></tr>
+   <tr><td><a href="#medium">Medium</a></td><td>Production use</td><td>5,000</td></tr>
+   <tr><td><a href="#large">Large</a></td><td>Production use</td><td>15,000</td></tr>
+</table>
+
+If you are using Metrics Forwarder and custom metrics, you might need to scale up the MySQL Server instance
+more than indicated in the tables below. 
+Pivotal recommends you start with the one of the following configurations and scale up as necessary 
+by following the steps in <a href="#metrics-datastore">Configuring the Metrics Datastore</a>.
+
+###<a id='small'></a>Deployment Resources for a Small Deployment
+
+This table lists the resources you need to configure for a small deployment, about 100 apps.
+
+<table>
+  <tr><th>Job</th><th>Instances</th><th>Persistent Disk Type</th><th width=40%>VM Type</th></tr>
+  <tr><td>Elasticsearch Master</td><td>1</td><td>10&nbsp;GB</td><td>small (cpu:&nbsp1, ram:&nbsp;2&nbsp;GB, disk:&nbsp;8&nbsp;GB)</td></tr>
+  <tr><td>Elasticsearch Data</td><td>1</td><td>10&nbsp;GB</td><td>small (cpu:&nbsp1, ram:&nbsp;2&nbsp;GB, disk:&nbsp;8&nbsp;GB)</td></tr>
+  <tr><td>Redis</td><td>1</td><td>10&nbsp;GB</td><td>micro (cpu:&nbsp1, ram:&nbsp;1&nbsp;GB, disk:&nbsp;8&nbsp;GB)</td></tr>
+  <tr><td>MySQL Server</td><td>1 (not configurable)</td><td>10&nbsp;GB</td><td>small (cpu:&nbsp1, ram:&nbsp;2&nbsp;GB, disk:&nbsp;8&nbsp;GB)</td></tr>
+</table>
+
+###<a id='medium'></a>Deployment Resources for a Medium Deployment
+
+This table lists the resources you need to configure for a medium deployment, about 5000 apps.
+
+<table>
+  <tr><th>Job</th><th>Instances</th><th>Persistent Disk Type</th><th width=40%>VM Type</th></tr>
+  <tr><td>Elasticsearch Master</td><td>1</td><td>10&nbsp;GB</td><td>small (cpu: 1, ram: 2&nbsp;GB, disk: 8&nbsp;GB)</td></tr>
+  <tr><td>Elasticsearch Data</td><td>5</td><td>200&nbsp;GB</td><td>small.disk (cpu: 1, ram: 2&nbsp;GB, disk: 16&nbsp;GB)</td></tr>
+  <tr><td>Redis</td><td>1</td><td>10&nbsp;GB</td><td>small.disk (cpu: 1, ram: 2&nbsp;GB, disk: 16&nbsp;GB)</td></tr>
+  <tr><td>MySQL Server</td><td>1 (not configurable)</td><td>500&nbsp;GB</td><td>medium (cpu: 2, ram: 4&nbsp;GB, disk: 8&nbsp;GB)</td></tr>
+</table>
+
+###<a id='large'></a>Deployment Resources for a Large Deployment
+
+This table lists the resources you need to configure for a large deployment, about 15,000 apps.
+
+<table>
+  <tr><th>Job</th><th>Instances</th><th>Persistent Disk Type</th><th width=40%>VM Type</th></tr>
+  <tr><td>Elasticsearch Master</td><td>1</td><td>10&nbsp;GB</td><td>small (cpu: 1, ram: 2&nbsp;GB, disk: 8&nbsp;GB)</td></tr>
+  <tr><td>Elasticsearch Data</td><td>10</td><td>500&nbsp;GB</td><td> large (cpu: 2, ram: 8&nbsp;GB, disk: 16&nbsp;GB)</td></tr>
+  <tr><td>Redis</td><td>1</td><td>10&nbsp;GB</td><td>large (cpu: 2, ram: 8&nbsp;GB, disk: 16&nbsp;GB)</td></tr>
+  <tr><td>MySQL Server</td><td>1 (not configurable)</td><td>2 &nbsp;TB</td><td>large (cpu: 2, ram: 8&nbsp;GB, disk: 16&nbsp;GB)</td></tr>
+</table>
+
+
+
+##<a id='metrics-datastore'></a> Scale the Metrics Datastore
+
+
+PCF Metrics stores metrics in a single MySQL node.
+For PCF deployments with high app logs load, you can add memory and persistent disk to the MySQL server node.
+
+###<a id='metrics-considerations'></a> Considerations for Scaling the Metrics Datastore
+
+While the default configurations in [Suggested Sizing by Deployment Size](#configs-by-size) above are a good starting point for your MySQL server node, 
+they do not take into account the additional load from custom metrics.
+Pivotal recommends evaluating performance over a period of time and scaling upwards as necessary.
+As long as persistent disk is scaled up, you won't not lose any data from scaling.
+
+
+###<a id='metrics-procedures'></a> Procedure for Scaling
+
+Do the following to scale up the MySQL server node: 
+
+To scale up the MySQL server node, do the following:
+
+1. Determine how much memory and persistent disk are required for the MySQL server node.
+1. Navigate to the Ops Manager Installation Dashboard and click the **Metrics** tile.
+1. From the **Settings** tab of the **Metrics** tile, click **Resource Config**.
+1. Enter the values for the **Persistent Disk Type** and **VM Type**.
+1. Click **Save**.
+
+<p class="note warning"><strong>WARNING!</strong> If you are using PCF v1.9.x and earlier,
+   there might be issues Ops Manager BOSH Director using persistent disks larger than 2&nbsp;TB.</p>
+
+##<a id='log-datastore'></a> Scale the Log Datastore
+
+PCF Metrics uses Elasticsearch to store logs.
+Each Elasticsearch node contains multiple shards of log data, divided by time slice.
+
+###<a id='log-considerations'></a> Considerations for Scaling
+
+The default configurations outlined [Suggested Sizing by Deployment Size](#configs-by-size) above are a good starting point for your Elasticsearch Master and Data nodes.
+
+For more precision, perform the following calculation, using your specific log loads:
+
+1. Determine how many logs the apps in your deployment emit per hour (_R_) and the average size of each log (_S_).
+
+2. Calculate the number of instances (_N_) and the persistent disk size for the instances (_D_) you need to scale to
+   using the following formula, assuming a log retention period of 336 hours (2 weeks):<br><br>
+
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; _R_ &times; _S_ &times; 336 =  _N_ &times; _D_ <br><br>
+
+    For example:
+
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 200,000 logs/hr &times; 336 hr &times; 25 KB &asymp; 8 instances &times; 200 GB<br>
+    or<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 200,000 logs/hr &times; 336 hr &times; 25 KB &asymp; 6 instances &times; 300 GB<br>
+
+
+
+3. If you want to achieve high availability for logs, then double the number of instances. 
+
+###<a id='log-procedures'></a> Procedure for Scaling
+
+<p class="note warning">
+<strong>WARNING!</strong> If you modify the number of Elasticsearch instances,
+               the Elasticsearch cluster temporarily enters an unhealthy period during which
+               it does not ingest any new logs data, due to shard allocation.</p>
+
+After determining the number of Elasticsearch nodes needed for your deployment, perform the following steps to scale your nodes:
+
+1. Navigate to the Ops Manager Installation Dashboard and click the **Metrics** tile.
+1. From the **Settings** tab of the **Metrics** tile, click **Resource Config**.
+1. Locate the **Elasticsearch Data** job and select the dropdown menu under **Instances** to change the number of instances. 
+1. Click **Save**.  
+
+##<a id='temp-datastore'></a> Scale the Temporary Datastore (Redis)
+
+PCF Metrics uses Redis to temporarily store ingested data from the Loggregator Firehose
+as well as cache data queried by the Metrics API.
+The former use case is to prevent major metrics and logs loss when the data stores (Elasticsearch and MySQL) are unavailable.
+The latter is to potentially speed up front-end queries. See [PCF Metrics Product Architecture](./architecture.html) for more information.
+
+###<a id='temp-considerations'></a> Considerations for Scaling
+
+The default Redis configuration specified in [Suggested Sizing by Deployment Size](#configs-by-size) above
+that fits your deployment size should work for most cases.
+Redis stores all data in memory, so if your deployment size requires it,
+you can also consider scaling up the RAM for your Redis instance(s).
+You can additionally increase the number of Redis instances to 2 if you need HA behavior when Redis upgrades.
+
+###<a id='temp-procedures'></a> Procedure for Scaling
+
+Follow these steps to configure the size of the Redis VM for the temporary datastore based on your calculations.
+
+<p class="note"><strong>Note</strong>: In the case that the temporary datastore becomes full,
+Redis uses the <code>volatile-ttl</code> eviction policy to continue storing incoming logs.
+For more information, see <i>Eviction policies</i> in <a href="https://redis.io/topics/lru-cache">Using Redis as an LRU cache</a>.</p>
+
+1. Navigate to the Ops Manager Installation Dashboard and click the **Redis** tile.
+
+1. From the **Settings** tab, click **Resource Config**. 
+
+1. In the **Dedicated Node** row, under **VM Type**, select an option with enough **RAM** for your deployment size.
+   Or, select the number of Redis instances you want under **Instances**.
+
+1. Click **Save**. 
+
+##<a id='ingestor'></a> Scale the Ingestor, Logqueues, and Metrics API
+
+The procedures for scaling the Ingestor, Elasticsearch logqueue, MySQL logqueue, and Metrics API instances are similiar.
+
++ **Ingestor** — PCF Metrics deploys the Ingestor as an app, `metrics-ingestor`, within PCF.
+The Ingestor consumes logs and metrics from the Loggregator Firehose, sending metrics and logs to their respective Logqueue apps.
+
+    To customize PCF Metrics for high capacity, you can scale the number of Ingestor app instances and increase the amount of memory per instance.
+
++ **Logqueues** — PCF Metrics deploys a **MySQL Logqueue** and an **Elasticsearch Logqueue** as apps,
+    `mysql-logqueue` and `elasticsearch-logqueue`, within PCF.
+  The MySQL logqueue consumes metrics from the Ingestor and forwards them to MySQL.
+  The Elasticsearch logqueue consumes logs from the Ingestor and forwards them to Elasticsearch.<br>
+
+    To customize PCF Metrics for high capacity, you can scale the number of Logqueue app instances and increase the amount of memory per instance.
+
+    The number of MySQL and Elasticsearch logqueues needed is dependent on the frequency that logs and metrics are forwarded by the Ingestor.
+    As a general rule:
+    +  For every 45,000 logs per minute, add 2 Elasticsearch logqueues.
+    +  For every 17,000 metrics per minute, add 1 MySQL logqueue.
+
+    The above is a general estimate. You might need fewer instances depending on your deployment.
+    To optimize resource allocation, provision fewer instances initially and increase instances until you achieve desired performance.
+
++ **Metrics API** — PCF Metrics deploys the app, `metrics`, within PCF. 
+
+Refer to this table to determine how many instances you need for each component.
+
+
+| Item | Small | Medium | Large |
+|-----------------------------|--------------------------------|-------------------------------|--------------------------------|
+|Ingestor instance count      | number of doppler servers      |number of doppler servers      |number of doppler servers       |
+|MySQL logqueue instance count| 1                              | 1                             |2                               |
+|ES logqueue instance count   | 1                              | 2                             | 3                              |
+|Metrics API instance count   | 1                              | 2                             | 2                              |
+
+Find the number of doppler servers in the Resource Config pane of the Pivotal Elastic Runtime tile. 
+
+
+
+###<a id='ingestor-considerations'></a> Considerations for Scaling
+
+Pivotal recommends starting with the configuration in [Suggested Sizing by Deployment Size](#configs-by-size) above, for your deployment size
+and then evaluating performance over a period of time and scaling upwards if performance degrades. 
+
+###<a id='ingestor-procedures'></a> Procedure for Scaling
+
+<p class="note warning"><strong>WARNING! </strong> If you decrease the number of instances,
+   you might lose data currently being processed on the instances you eliminate.</p>
+
+After determining the number of instances needed for your deployment, 
+perform the following steps to scale:
+
+1. Target your Cloud Controller with the Cloud Foundry Command Line Interface (cf CLI).
+   If you have not installed the cf CLI, see [Installing the cf CLI](http://docs.pivotal.io/pivotalcf/cf-cli/install-go-cli.html).
+	<pre class="terminal">
+	$ cf api api.YOUR-SYSTEM-DOMAIN
+	Setting api endpoint to api.YOUR-SYSTEM-DOMAIN...
+	OK
+	API endpoint:   <span>https:</span>//api.YOUR-SYSTEM-DOMAIN (API version: 2.54.0)
+	Not logged in. Use 'cf login' to log in.
+	</pre>
+
+2. Log in with your UAA administrator credentials.
+   To retrieve these credentials, navigate to the **Pivotal Elastic Runtime** tile in the Ops Manager Installation Dashboard and click **Credentials**.
+   Under **UAA**, click **Link to Credential** next to **Admin Credentials** and record the password.
+	<pre class="terminal">
+	$ cf login
+	API endpoint: <span>https:</span>//api.YOUR-SYSTEM-DOMAIN
+
+	Email> admin
+	Password>
+	Authenticating...
+	OK
+
+3. When prompted, target the `metrics` space.
+	<pre class="terminal">
+	Targeted org system
+
+	Select a space (or press enter to skip):
+	<span>1</span>. system
+	<span>2</span>. notifications-with-ui
+	<span>3</span>. autoscaling
+	<span>4</span>. metrics
+
+	Space> 4
+	Targeted space metrics
+
+	API endpoint:   <span>https:</span>//api.YOUR-SYSTEM-DOMAIN (API version: 2.54.0)
+	User:           admin
+	Org:            system
+	Space:          metrics
+	</pre>
+
+4. List the apps that are running in the `metrics` space.
+	<pre class="terminal">
+$ cf apps
+Getting apps in org system / space metrics as admin...
+OK<br>
+name                      requested state     instances    memory   disk   urls
+elasticsearch-logqueue    started             1/1          256M     1G
+metrics                   started             1/1          1G       2G     metrics.YOUR-SYSTEM-DOMAIN/api/v1
+metrics-ingestor          started             1/1          256M     1G
+metrics-ui                started             1/1          64G      1G     metrics.YOUR-SYSTEM-DOMAIN
+mysql-logqueue            started             1/1          512M     1G
+</pre>
+
+
+5. Scale the app to the desired number of instances:
+
+    <code>cf scale APP-NAME -i INSTANCE-NUMBER</code>
+
+    Where the `APP-NAME` is `elasticsearch-logqueue`, `metrics`, `metrics-ingestor`, or `mysql-logqueue`.<br>
+    For example, to scale all the apps: 
+	<pre class="terminal">$ cf scale elasticsearch-logqueue -i 2
+    $ cf scale metrics -i 2
+    $ cf scale metrics-ingestor -i 2
+    $ cf scale mysql-logqueue -i 2</pre>
+
+1. Evaluate the CPU and memory load on the instances:
+
+    <code>cf app APP-NAME</code>
+
+    For example, 
+	<pre class="terminal">
+	$ cf app metrics-ingestor
+	Showing health and status for app metrics-ingestor in org system / space metrics as admin...
+	OK
+	<br>
+	requested state: started
+	instances: 1/1
+	usage: 1G x 1 instances
+	urls: 
+	last uploaded: Sat Apr 23 16:11:29 UTC 2016
+	stack: cflinuxfs2
+	buildpack: binary_buildpack 
+	<br>	
+	     state     since                    cpu    memory        disk           details
+	<span>#</span>0   running   2016-07-21 03:49:58 PM   2.9%   13.5M of 1G   12.9M of 1G
+	</pre>
+
+1. If your average memory usage exceeds 50% or your CPU consistently averages over 85%,
+   add more instances with `cf scale APP-NAME -i INSTANCE-NUMBER`.
+   <br><br>
+   In general, you should scale the app by adding additional instances.
+   However, you can also scale the app by increasing the amount of memory per instance:
+
+        cf scale APP-NAME -m NEW-MEMORY-LIMIT
+
+    For example, 
+	<pre class="terminal">$ cf scale metrics-ingestor -m 2G</pre>
+
+	For more information about scaling app instances, see [Scaling an Application Using cf scale](http://docs.pivotal.io/pivotalcf/devguide/deploy-apps/cf-scale.html).
+

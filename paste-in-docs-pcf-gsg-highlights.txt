@@ -1,0 +1,4 @@
+**PCF Metrics v1.4**: Provides out-of-the-box Spring Boot Actuator metrics,
+custom app metrics, instance level metrics visualization,
+and contains a significant updates to the UI.
+For more information, see [PCF Metrics Release Notes and Known Issues](https://docs.pivotal.io/pcf-metrics/1-4/rn-ki.html).
