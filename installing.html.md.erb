@@ -11,9 +11,11 @@ For information about the components deployed as part of this install procedure,
 
 ## <a id='pre-reqs'></a>Prerequisites
 
-* Ensure that you have installed the [Elastic Runtime Tile](http://docs.pivotal.io/pivotalcf/installing/index.html).
+* Ensure that you have installed the [Pivotal Application Service (PAS)](http://docs.pivotal.io/pivotalcf/installing/index.html). 
+  This was previously known as Elastic Runtime.
 * Ensure that you have installed v1.6 or later of the [Redis tile](https://docs.pivotal.io/redis/1-6/).
-* If you are running PCF on AWS, then ensure that, in Elastic Runtime, you have changed the <strong>Loggregator Port</strong> to `4443`from its value of `443`.
+* If you are running PCF on AWS, then ensure that, in Pivotal Application Service, you have changed 
+   the <strong>Loggregator Port</strong> to `4443`from its value of `443`.
 * If you are running PCF on Google Cloud Platform (GCP), then do the following to configure the DNS entries to 
 accommodate web sockets:
    1. Log in to the GCP console.
@@ -28,7 +30,7 @@ accommodate web sockets:
    10. Repeat Steps 6–9 twice to create DNS records for elasticsearch-logqueue (`elasticsearch-logqueue.SYSTEM_DOMAIN`) and metrics (`metrics.SYSTEM_DOMAIN`).
    
 ## <a id='step1'></a> Step 1: Add the PCF Metrics Tile to Ops Manager
-   <p class='note'><strong>Note</strong>: PCF Metrics should be installed on the same network as the Elastic Runtime Tile. </p>
+   <p class='note'><strong>Note</strong>: PCF Metrics should be installed on the same network as the  Pivotal Application Service. </p>
 
 1. Download the PCF Metrics file from
    [Pivotal Network](https://network.pivotal.io/products/pcf-metrics).
