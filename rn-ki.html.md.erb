@@ -7,6 +7,80 @@ list_style_none: true
 
 This topic contains release notes for App Metrics 2.0 and later.
 
+## <a id='2-0-6'></a>v2.0.6
+**Release Date: March 19, 2021**
+
+Requires TAS 2.10+, 2.9.5+, 2.8.11+, 2.7.17+ or 2.6.21+.
+
+## New Features
+
+This release has the following new features:
+
+<ul>
+  <li>
+    Ability to specify the Postgres SSL Cipher Suite in the tile configuration throw Ops Manager
+  </li>
+</ul>
+
+### Resolved Issues
+
+This release has the following fixes:
+
+<ul>
+  <li>
+    Postgres only uses mTLS connections
+  </li>
+  <li>
+      Check Postgres health via smoke tests in install
+  </li>
+  <li>
+      Added health-check for internal Postgres
+  </li>
+  <li>
+      No longer send duplicate slack alerts
+  </li>
+  <li>
+      Accept http_proxy env variable with upper and lower cases
+  </li>
+  <li>
+      Application with name containing “dashboard” no longer causes an ui error
+  </li>
+  <li>
+      Org with name containing “/” no longer causes an ui error
+  </li>
+  <li>
+      Displaying application and process crash events in Event chart
+  </li>
+  <li>
+      Clean up security-group when uninstalling App Metrics
+  </li>
+</ul>
+
+### Maintenance Updates
+
+This release updates the following release:
+
+<ul>
+  <li>Log Store release to v4.0.50</li>
+</ul>
+
+Log Store has the following fixes:
+
+<ul>
+  <li>
+    Fixed Log store dependency internal issue with newest version of influxdb 1.x
+  </li>
+  <li>
+      Missing logs for a few apps when using partition count non divisible to 3
+  </li>
+  <li>
+      Fixed load balancer side effect on log-store internal routing
+  </li>
+  <li>
+      Fix for log-store breaking after AZ scaling up
+  </li>
+</ul>
+
 ## <a id='2-0-5'></a>v2.0.5
 
 **Release Date: October 9, 2020**
